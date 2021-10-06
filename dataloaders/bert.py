@@ -13,22 +13,6 @@ class BertDataloader(AbstractDataloader):
         self.mask_prob = args.bert_mask_prob
         self.CLOZE_MASK_TOKEN = self.item_count + 1
 
-        code = args.train_negative_sampler_code
-        train_negative_sampler = negative_sampler_factory(code, self.train, self.val, self.test,
-                                                          self.user_count, self.item_count,
-                                                          args.train_negative_sample_size,
-                                                          args.train_negative_sampling_seed,
-                                                          self.save_folder)
-        code = args.test_negative_sampler_code
-        test_negative_sampler = negative_sampler_factory(code, self.train, self.val, self.test,
-                                                         self.user_count, self.item_count,
-                                                         args.test_negative_sample_size,
-                                                         args.test_negative_sampling_seed,
-                                                         self.save_folder)
-
-        self.train_negative_samples = train_negative_sampler.get_negative_samples()
-        self.test_negative_samples = test_negative_sampler.get_negative_samples()
-
     @classmethod
     def code(cls):
         return 'bert'
@@ -94,12 +78,14 @@ class BertTrainDataset(data_utils.Dataset):
 
                 if prob < 0.8:
                     tokens.append(self.mask_token)
+                    labels.append(s)
                 elif prob < 0.9:
                     tokens.append(self.rng.randint(1, self.num_items))
+                    labels.append(s)
                 else:
                     tokens.append(s)
+                    tokens.append(0)
 
-                labels.append(s)
             else:
                 tokens.append(s)
                 labels.append(0)
@@ -107,10 +93,10 @@ class BertTrainDataset(data_utils.Dataset):
         tokens = tokens[-self.max_len:]
         labels = labels[-self.max_len:]
 
-        mask_len = self.max_len - len(tokens)
+        padding_len = self.max_len - len(tokens)
 
-        tokens = [0] * mask_len + tokens
-        labels = [0] * mask_len + labels
+        tokens = [0] * padding_len + tokens
+        labels = [0] * padding_len + labels
 
         return torch.LongTensor(tokens), torch.LongTensor(labels)
 
