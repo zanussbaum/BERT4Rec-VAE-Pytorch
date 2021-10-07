@@ -2,29 +2,6 @@ import torch
 from sklearn.metrics import dcg_score
 
 
-def recall(scores, labels, k):
-    scores = scores
-    labels = labels
-    rank = (-scores).argsort(dim=1)
-    cut = rank[:, :k]
-    hit = labels.gather(1, cut)
-    return (hit.sum(1).float() / torch.min(torch.Tensor([k]).to(hit.device), labels.sum(1).float())).mean().cpu().item()
-
-
-def ndcg(scores, labels, k):
-    scores = scores.cpu()
-    labels = labels.cpu()
-    rank = (-scores).argsort(dim=1)
-    cut = rank[:, :k]
-    hits = labels.gather(1, cut)
-    position = torch.arange(2, 2+k)
-    weights = 1 / torch.log2(position.float())
-    dcg = (hits.float() * weights).sum(1)
-    idcg = torch.Tensor([weights[:min(int(n), k)].sum() for n in labels.sum(1)])
-    ndcg = dcg / idcg
-    return ndcg.mean()
-
-
 def recalls_and_ndcgs_for_ks(scores, labels, ks):
     metrics = {}
 
@@ -32,6 +9,12 @@ def recalls_and_ndcgs_for_ks(scores, labels, ks):
     labels = labels
 
     labels_float = labels.float()
+    # returns ranking of pred label (assuming at pos 0)
+    # scores = [4, 1, 2, 3]
+    # scores.argsort() = [1, 2, 3, 0]
+    # scores.argsort().argsort() = [3, 0, 1, 2]
+    # can then compare 0th column and see if < k
+    # inspired by: https://github.com/FeiSun/BERT4Rec/blob/master/run.py#L176
     rank = (-scores).argsort(dim=1).argsort(dim=1)[:, 0]
     batch_size = labels.size(0)
     for k in sorted(ks, reverse=True):
@@ -40,6 +23,7 @@ def recalls_and_ndcgs_for_ks(scores, labels, ks):
         
         # don't normalize as we compute this in the AverageMeter Class
         metrics['Recall@%d' % k] = (valid_count, batch_size)
+        # this could also very well be wrong!
         metrics['NDCG@%d' % k] = (dcg_score(labels_float, scores, k=k) * batch_size , batch_size)
 
     return metrics
