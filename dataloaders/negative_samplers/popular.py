@@ -1,3 +1,5 @@
+import numpy as np
+
 from .base import AbstractNegativeSampler
 
 from tqdm import trange
@@ -11,7 +13,7 @@ class PopularNegativeSampler(AbstractNegativeSampler):
         return 'popular'
 
     def generate_negative_samples(self):
-        popular_items = self.items_by_popularity()
+        probabilities = self.items_by_popularity()
 
         negative_samples = {}
         print('Sampling negative items')
@@ -21,12 +23,13 @@ class PopularNegativeSampler(AbstractNegativeSampler):
             seen.update(self.test[user])
 
             samples = []
-            for item in popular_items:
-                if len(samples) == self.sample_size:
-                    break
-                if item in seen:
-                    continue
-                samples.append(item)
+            
+            while len(samples) < self.sample_size:
+                sampled_ids = np.random.choice(len(probabilities), 101, replace=False, p=probabilities)
+                sampled_ids = [x for x in sampled_ids if x not in seen]
+                samples.extend(sampled_ids)
+                
+            samples = samples[-self.sample_size:] 
 
             negative_samples[user] = samples
 
@@ -38,5 +41,8 @@ class PopularNegativeSampler(AbstractNegativeSampler):
             popularity.update(self.train[user])
             popularity.update(self.val[user])
             popularity.update(self.test[user])
-        popular_items = sorted(popularity, key=popularity.get, reverse=True)
-        return popular_items
+
+        counts = popularity.values()
+        total = sum(counts)
+        probabilities = [popularity.get(i)/total for i in range(len(popularity))]
+        return probabilities

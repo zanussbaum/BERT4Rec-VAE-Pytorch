@@ -120,7 +120,6 @@ class AbstractTrainer(metaclass=ABCMeta):
         with torch.no_grad():
             tqdm_dataloader = tqdm(self.val_loader)
             for batch_idx, batch in enumerate(tqdm_dataloader):
-                batch_size = batch[1].size(0) - 1 
                 batch = [x.to(self.device) for x in batch]
 
                 metrics = self.calculate_metrics(batch)

@@ -17,17 +17,17 @@ def set_template(args):
         args.val_batch_size = batch
         args.test_batch_size = batch
 
-        args.train_negative_sampler_code = 'random'
+        args.train_negative_sampler_code = 'popular'
         args.train_negative_sample_size = 0
         args.train_negative_sampling_seed = 0
-        args.test_negative_sampler_code = 'random'
+        args.test_negative_sampler_code = 'popular'
         args.test_negative_sample_size = 100
         args.test_negative_sampling_seed = 98765
 
         args.trainer_code = 'bert'
         args.device = 'cuda'
-        args.num_gpu = 1
-        args.device_idx = '0'
+        args.num_gpu = 4
+        args.device_idx = '0,1,2,3'
         args.optimizer = 'Adam'
         args.lr = 0.001
         args.enable_lr_schedule = True
