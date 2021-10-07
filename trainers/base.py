@@ -120,12 +120,13 @@ class AbstractTrainer(metaclass=ABCMeta):
         with torch.no_grad():
             tqdm_dataloader = tqdm(self.val_loader)
             for batch_idx, batch in enumerate(tqdm_dataloader):
+                batch_size = batch[1].size(0) - 1 
                 batch = [x.to(self.device) for x in batch]
 
                 metrics = self.calculate_metrics(batch)
 
                 for k, v in metrics.items():
-                    average_meter_set.update(k, v)
+                    average_meter_set.update(k, v[0], n=v[1])
                 description_metrics = ['NDCG@%d' % k for k in self.metric_ks[:3]] +\
                                       ['Recall@%d' % k for k in self.metric_ks[:3]]
                 description = 'Val: ' + ', '.join(s + ' {:.3f}' for s in description_metrics)

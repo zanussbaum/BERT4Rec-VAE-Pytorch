@@ -6,3 +6,4 @@ tb-nightly
 pandas
 scipy
 future
+scikit-learn

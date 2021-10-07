@@ -44,7 +44,7 @@ parser.add_argument('--test_batch_size', type=int, default=64)
 ################
 # NegativeSampler
 ################
-parser.add_argument('--train_negative_sampler_code', type=str, default='random', choices=['popular', 'random'],
+parser.add_argument('--train_negative_sampler_code', type=str, default='popular', choices=['popular', 'random'],
                     help='Method to sample negative items for training. Not used in bert')
 parser.add_argument('--train_negative_sample_size', type=int, default=100)
 parser.add_argument('--train_negative_sampling_seed', type=int, default=None)
