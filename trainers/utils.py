@@ -22,7 +22,7 @@ def recalls_and_ndcgs_for_ks(scores, labels, ks):
         valid_count = valid.sum()
         
         # don't normalize as we compute this in the AverageMeter Class
-        metrics['Recall@%d' % k] = (valid_count, batch_size)
+        metrics['Recall@%d' % k] = (valid_count.detach().cpu().numpy(), batch_size)
         # this could also very well be wrong!
         metrics['NDCG@%d' % k] = (dcg_score(labels_float, scores, k=k) * batch_size , batch_size)
 

@@ -30,6 +30,7 @@ class AbstractTrainer(metaclass=ABCMeta):
             self.lr_scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=args.decay_step, gamma=args.gamma)
 
         self.num_epochs = args.num_epochs
+        self.num_steps = args.num_steps
         self.metric_ks = args.metric_ks
         self.best_metric = args.best_metric
 
@@ -63,11 +64,12 @@ class AbstractTrainer(metaclass=ABCMeta):
     @abstractmethod
     def calculate_metrics(self, batch):
         pass
-
+    
     def train(self):
         accum_iter = 0
-        self.validate(0, accum_iter)
-        for epoch in range(self.num_epochs):
+        num_epochs = self.num_steps // len(self.train_loader)
+        print(f"Training for {num_epochs} epochs")
+        for epoch in range(num_epochs):
             accum_iter = self.train_one_epoch(epoch, accum_iter)
             self.validate(epoch, accum_iter)
         self.logger_service.complete({
@@ -146,7 +148,17 @@ class AbstractTrainer(metaclass=ABCMeta):
         print('Test best model with test set!')
 
         best_model = torch.load(os.path.join(self.export_root, 'models', 'best_acc_model.pth')).get('model_state_dict')
-        self.model.load_state_dict(best_model)
+        from collections import OrderedDict
+        new_state_dict = OrderedDict()
+
+        for k, v in best_model.items():
+            if 'module' not in k:
+                k = 'module.'+k
+            else:
+                k = k.replace('features.module.', 'module.features.')
+            new_state_dict[k] = v
+
+        self.model.load_state_dict(new_state_dict)
         self.model.eval()
 
         average_meter_set = AverageMeterSet()
@@ -159,7 +171,7 @@ class AbstractTrainer(metaclass=ABCMeta):
                 metrics = self.calculate_metrics(batch)
 
                 for k, v in metrics.items():
-                    average_meter_set.update(k, v)
+                    average_meter_set.update(k, v[0], n=v[1])
                 description_metrics = ['NDCG@%d' % k for k in self.metric_ks[:3]] +\
                                       ['Recall@%d' % k for k in self.metric_ks[:3]]
                 description = 'Val: ' + ', '.join(s + ' {:.3f}' for s in description_metrics)

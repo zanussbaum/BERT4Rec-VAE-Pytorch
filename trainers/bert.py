@@ -37,5 +37,5 @@ class BERTTrainer(AbstractTrainer):
         scores = scores[:, -1, :]  # B x V
         scores = scores.gather(1, candidates)  # B x C
 
-        metrics = recalls_and_ndcgs_for_ks(scores, labels, self.metric_ks)
+        metrics = recalls_and_ndcgs_for_ks(scores.detach().cpu(), labels.detach().cpu(), self.metric_ks)
         return metrics
