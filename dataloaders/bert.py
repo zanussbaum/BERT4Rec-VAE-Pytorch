@@ -100,7 +100,7 @@ class BertTrainDataset(data_utils.Dataset):
                     labels.append(s)
                 else:
                     tokens.append(s)
-                    tokens.append(0)
+                    labels.append(0)
 
             else:
                 tokens.append(s)
